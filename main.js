@@ -51,7 +51,9 @@ var Card = {
           )
         ),
         m(Button, {
-          title: vnode.attrs.isCompleted ? "Done" : m(ClipboardDocument),
+          title: vnode.attrs.isCompleted
+            ? "Done"
+            : m(ClipboardDocument, { class: "text-blue-500 w-6 h-6" }),
           style: vnode.attrs.isCompleted ? "green" : "blue",
           onclick: vnode.attrs.isCompleted ? null : copyToClipboard,
         }),
@@ -108,7 +110,6 @@ var MyComponent = {
         )
       ),
       m("main", { class: "container mx-auto my-8 px-3" }, [
-        m(ClipboardDocument),
         m(
           "section",
           { class: "controls my-4 flex items-baseline flex-wrap gap-3" },
