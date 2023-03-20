@@ -1,5 +1,4 @@
 import m from "mithril";
-import { SplitVendorChunkCache } from "vite";
 
 export const ClipboardDocument = {
   view: function (vnode) {
