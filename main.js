@@ -1,6 +1,7 @@
 import "./style.css";
 import zipWith from "lodash/zipWith";
 import m from "mithril";
+import { createPopper } from "@popperjs/core";
 
 import { ClipboardDocument } from "./icons";
 
@@ -8,6 +9,47 @@ function repeatItem1AndThenSingleItem2(count, item1, item2) {
   const array = Array(count).fill(item1);
   array.push(item2);
   return array;
+}
+
+function WithTooltip() {
+  let popperInstance;
+  return {
+    oncreate: function (vnode) {
+      const [child, tooltip] = vnode.dom.children;
+      popperInstance = createPopper(child, tooltip, {
+        placement: "top",
+        modifiers: [
+          {
+            name: "offset",
+            options: {
+              offset: [0, 8],
+            },
+          },
+        ],
+      });
+    },
+    onupdate: function () {
+      popperInstance.update();
+    },
+    view: function (vnode) {
+      return m(
+        ".with-tooltip",
+        vnode.attrs.child,
+        m(
+          ".tooltip.absolute.z-10.inline-block.px-3.py-2.text-sm.font-medium.text-white.bg-gray-900.rounded-lg.shadow-sm",
+          {
+            class: vnode.attrs.showTooltip ? "" : "hidden",
+            // id: "tooltip",
+            // hidden: !vnode.attrs.showTooltip,
+          },
+          [
+            vnode.attrs.message,
+            m("div", { class: "tooltip-arrow", "data-popper-arrow": "" }),
+          ]
+        )
+      );
+    },
+  };
 }
 
 var Button = {
@@ -50,12 +92,16 @@ var Card = {
             vnode.attrs.command
           )
         ),
-        m(Button, {
-          title: vnode.attrs.isCompleted
-            ? "Done"
-            : m(ClipboardDocument, { class: "text-blue-500 w-6 h-6" }),
-          style: vnode.attrs.isCompleted ? "green" : "blue",
-          onclick: vnode.attrs.isCompleted ? null : copyToClipboard,
+        m(WithTooltip, {
+          message: "Copied to clipboard!",
+          showTooltip: copiedToClipboard && !vnode.attrs.isCompleted,
+          child: m(Button, {
+            title: vnode.attrs.isCompleted
+              ? "Done"
+              : m(ClipboardDocument, { class: "text-blue-500 w-6 h-6" }),
+            style: vnode.attrs.isCompleted ? "green" : "blue",
+            onclick: vnode.attrs.isCompleted ? null : copyToClipboard,
+          }),
         }),
       ]
     );
@@ -64,9 +110,16 @@ var Card = {
 
 var command = "";
 var numberOfCardsShown = 0;
+var copiedToClipboard = false;
 
 function cardsForCommand(command) {
-  return [{ command: command }, { command: command }, { command: command }];
+  return [
+    { command: " echo command 1" },
+    { command: " echo command 2" },
+    { command: " echo command 3" },
+    { command: " echo command 4" },
+    { command: " echo command 5" },
+  ];
 }
 
 function colorCards(cards, isAllDone) {
@@ -123,7 +176,12 @@ var MyComponent = {
               oninput: updateCommand,
             }),
             m(Button, {
-              title: numberOfCardsShown ? "Setup in progress..." : "Start",
+              title:
+                numberOfCardsShown === cardsForCommand(command).length
+                  ? "Done"
+                  : numberOfCardsShown
+                  ? "Setup in progress..."
+                  : "Start",
               onclick: startClicked,
             }),
           ]
@@ -143,7 +201,20 @@ function startClicked() {
 }
 
 function copyToClipboard() {
-  numberOfCardsShown++;
+  const c = cardsForCommand(command)[numberOfCardsShown - 1].command;
+  navigator.clipboard.writeText(c);
+  copiedToClipboard = true;
+  setTimeout(() => {
+    m.redraw();
+  }, 10);
+  setTimeout(() => {
+    copiedToClipboard = false;
+    m.redraw();
+  }, 2000);
+  setTimeout(() => {
+    numberOfCardsShown++;
+    m.redraw();
+  }, 4000);
 }
 
 m.mount(document.getElementById("app"), MyComponent);
