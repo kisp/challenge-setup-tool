@@ -143,7 +143,10 @@ function startClicked() {
 }
 
 function copyToClipboard() {
-  numberOfCardsShown++;
+  setTimeout(() => {
+    numberOfCardsShown++;
+    m.redraw();
+  }, 3000);
 }
 
 m.mount(document.getElementById("app"), MyComponent);
