@@ -1,9 +1,12 @@
 import "./style.css";
+
 import zipWith from "lodash/zipWith";
 import m from "mithril";
 import { createPopper } from "@popperjs/core";
 
 import { ClipboardDocument } from "./icons";
+import { isNpxCommandValid, cardsForCommand } from "./logic";
+import { db, processStatus } from "./state";
 
 function repeatItem1AndThenSingleItem2(count, item1, item2) {
   const array = Array(count).fill(item1);
@@ -60,11 +63,18 @@ var Button = {
     if (vnode.attrs.style === "blue")
       colorStyles = "border-blue-600 bg-blue-300";
     let sizeStyles = "py-2 ";
+    let disabledStyles = "";
+    if (vnode.attrs.visuallyDisable) disabledStyles = "disabled:opacity-75 ";
     return m(
       "button",
       {
-        class: "border border-2 px-6 rounded-xl " + sizeStyles + colorStyles,
+        class:
+          "border border-2 px-6 rounded-xl disabled:cursor-not-allowed " +
+          disabledStyles +
+          sizeStyles +
+          colorStyles,
         onclick: vnode.attrs.onclick,
+        disabled: vnode.attrs.disabled,
       },
       vnode.attrs.title
     );
@@ -94,33 +104,20 @@ var Card = {
         ),
         m(WithTooltip, {
           message: "Copied to clipboard!",
-          showTooltip: copiedToClipboard && !vnode.attrs.isCompleted,
+          showTooltip: db.copiedToClipboard && !vnode.attrs.isCompleted,
           child: m(Button, {
             title: vnode.attrs.isCompleted
               ? "Done"
               : m(ClipboardDocument, { class: "text-blue-500 w-6 h-6" }),
             style: vnode.attrs.isCompleted ? "green" : "blue",
             onclick: vnode.attrs.isCompleted ? null : copyToClipboard,
+            disabled: vnode.attrs.isCompleted,
           }),
         }),
       ]
     );
   },
 };
-
-var command = "";
-var numberOfCardsShown = 0;
-var copiedToClipboard = false;
-
-function cardsForCommand(command) {
-  return [
-    { command: " echo command 1" },
-    { command: " echo command 2" },
-    { command: " echo command 3" },
-    { command: " echo command 4" },
-    { command: " echo command 5" },
-  ];
-}
 
 function colorCards(cards, isAllDone) {
   if (cards.length === 0) return cards;
@@ -137,9 +134,9 @@ function colorCards(cards, isAllDone) {
 
 var Cards = {
   view: function () {
-    const myCards = cardsForCommand(command);
-    let cards = myCards.slice(0, numberOfCardsShown);
-    cards = colorCards(cards, numberOfCardsShown === myCards.length);
+    const myCards = cardsForCommand(db.command);
+    let cards = myCards.slice(0, db.numberOfCardsShown);
+    cards = colorCards(cards, db.numberOfCardsShown === myCards.length);
     return m(
       "section",
       { class: "cards my-8" },
@@ -150,8 +147,10 @@ var Cards = {
   },
 };
 
-var MyComponent = {
+var Main = {
   view: function () {
+    const cards = cardsForCommand(db.command);
+    const status = processStatus(cards);
     return [
       m(
         "header",
@@ -169,20 +168,19 @@ var MyComponent = {
           [
             m("label", { for: "npx-command", class: "text-xl" }, "Npx command"),
             m("input", {
-              class: "border-2 rounded text-xl px-2 pb-1 pt-2 font-mono",
+              class:
+                "border-2 rounded text-sm px-2 pb-1 pt-2 font-mono flex-grow",
               type: "text",
               id: "npx-command",
-              placeholder: "npx ...",
+              placeholder: "npx ghcd@latest ...",
               oninput: updateCommand,
+              readonly: status !== "Start",
             }),
             m(Button, {
-              title:
-                numberOfCardsShown === cardsForCommand(command).length
-                  ? "Done"
-                  : numberOfCardsShown
-                  ? "Setup in progress..."
-                  : "Start",
+              title: status,
               onclick: startClicked,
+              visuallyDisable: true,
+              disabled: !isNpxCommandValid(db.command) || status !== "Start",
             }),
           ]
         ),
@@ -193,28 +191,28 @@ var MyComponent = {
 };
 
 function updateCommand(e) {
-  command = e.target.value;
+  db.command = e.target.value;
 }
 
 function startClicked() {
-  numberOfCardsShown = 1;
+  db.numberOfCardsShown = 1;
 }
 
 function copyToClipboard() {
-  const c = cardsForCommand(command)[numberOfCardsShown - 1].command;
+  const c = cardsForCommand(db.command)[db.numberOfCardsShown - 1].command;
   navigator.clipboard.writeText(c);
-  copiedToClipboard = true;
+  db.copiedToClipboard = true;
   setTimeout(() => {
     m.redraw();
   }, 10);
   setTimeout(() => {
-    copiedToClipboard = false;
+    db.copiedToClipboard = false;
     m.redraw();
   }, 2000);
   setTimeout(() => {
-    numberOfCardsShown++;
+    db.numberOfCardsShown++;
     m.redraw();
   }, 4000);
 }
 
-m.mount(document.getElementById("app"), MyComponent);
+m.mount(document.getElementById("app"), Main);
