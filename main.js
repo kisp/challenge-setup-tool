@@ -169,10 +169,11 @@ var MyComponent = {
           [
             m("label", { for: "npx-command", class: "text-xl" }, "Npx command"),
             m("input", {
-              class: "border-2 rounded text-xl px-2 pb-1 pt-2 font-mono",
+              class:
+                "border-2 rounded text-xl px-2 pb-1 pt-2 font-mono flex-grow",
               type: "text",
               id: "npx-command",
-              placeholder: "npx ...",
+              placeholder: "npx ghcd@latest ...",
               oninput: updateCommand,
             }),
             m(Button, {
