@@ -37,6 +37,7 @@ function WithTooltip() {
     view: function (vnode) {
       return m(
         ".with-tooltip",
+        { class: vnode.attrs.classForWrapper },
         vnode.attrs.child,
         m(
           ".tooltip.absolute.z-10.inline-block.px-3.py-2.text-sm.font-medium.text-white.bg-gray-900.rounded-lg.shadow-sm",
@@ -167,14 +168,24 @@ var Main = {
           { class: "controls my-4 flex items-baseline flex-wrap gap-3" },
           [
             m("label", { for: "npx-command", class: "text-xl" }, "Npx command"),
-            m("input", {
-              class:
-                "border-2 rounded text-sm px-2 pb-1 pt-2 font-mono flex-grow",
-              type: "text",
-              id: "npx-command",
-              placeholder: "npx ghcd@latest ...",
-              oninput: updateCommand,
-              readonly: status !== "Start",
+            m(WithTooltip, {
+              classForWrapper: "flex-grow",
+              message: m(
+                "div",
+                m("p", "Oops, that npx command does not seem to be valid!"),
+                m("p", "If you believe this is a bug, please open an issue :)")
+              ),
+              showTooltip:
+                db.command.trim().length && !isNpxCommandValid(db.command),
+              child: m("input", {
+                class:
+                  "border-2 rounded text-sm px-2 pb-1 pt-2 font-mono w-full",
+                type: "text",
+                id: "npx-command",
+                placeholder: "npx ghcd@latest ...",
+                oninput: updateCommand,
+                readonly: status !== "Start",
+              }),
             }),
             m(Button, {
               title: status,
