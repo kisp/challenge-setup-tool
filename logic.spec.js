@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isNpxCommandValid, parseNpxCommand } from "./logic";
+import { isNpxCommandValid, sessionPath, generateShellCommands } from "./logic";
 
 describe("isNpxCommandValid", () => {
   it("returns false on foo", () => {
@@ -34,17 +34,27 @@ describe("isNpxCommandValid", () => {
   });
 });
 
-describe("parseNpxCommand", () => {
+describe("sessionPath", () => {
   it("parses a valid command successfully", () => {
-    expect(
-      parseNpxCommand("npx ghcd@latest some/repo/sessions/path")
-    ).toBeTruthy();
+    expect(sessionPath("npx ghcd@latest some/repo/sessions/path")).toBeTruthy();
   });
   it("returns the session path", () => {
     expect(
-      parseNpxCommand(
+      sessionPath(
         "npx ghcd@latest some/repo/tree/main/sessions/path/to/session"
       )
     ).toEqual("path/to/session");
+  });
+});
+
+describe("generateShellCommands", () => {
+  it("returns the commands as it should", () => {
+    const command =
+      "npx ghcd@latest some/repo/tree/main/sessions/path/to/session";
+    expect(generateShellCommands(command)).toEqual([
+      "git switch main",
+      "mkdir -p path/to",
+      "npx ghcd@latest some/repo/tree/main/sessions/path/to/session path/to/session",
+    ]);
   });
 });
