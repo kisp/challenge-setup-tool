@@ -1,6 +1,12 @@
+const regex = /^\s*npx\s+ghcd@latest\s+[^ ]+sessions.([^ ]+)\s*$/;
+
 export const isNpxCommandValid = (command) => {
-  const regex = /^\s*npx\s+ghcd@latest\s+[^ ]+\s*$/;
   return regex.test(command);
+};
+
+export const parseNpxCommand = (command) => {
+  if (!isNpxCommandValid(command)) return null;
+  return command.match(regex)[1];
 };
 
 export function cardsForCommand(command) {
