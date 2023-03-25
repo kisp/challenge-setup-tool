@@ -56,7 +56,7 @@ function WithTooltip() {
   };
 }
 
-var Button = {
+const Button = {
   view: function (vnode) {
     let colorStyles = "border-black";
     if (vnode.attrs.style === "green")
@@ -82,7 +82,7 @@ var Button = {
   },
 };
 
-var Card = {
+const Card = {
   view: function (vnode) {
     let style = "";
     if (vnode.attrs.isCompleted) style = "bg-green-400 border-green-600";
@@ -132,7 +132,7 @@ function colorCards(cards, isAllDone) {
   });
 }
 
-var Cards = {
+const Cards = {
   view: function () {
     const myCards = cardsForCommand(db.command);
     let cards = myCards.slice(0, db.numberOfCardsShown);
@@ -147,7 +147,7 @@ var Cards = {
   },
 };
 
-var Main = {
+const Main = {
   view: function () {
     const cards = cardsForCommand(db.command);
     const status = processStatus(cards, isNpxCommandValid(db.command));
