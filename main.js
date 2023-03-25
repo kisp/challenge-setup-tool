@@ -14,67 +14,99 @@ function repeatItem1AndThenSingleItem2(count, item1, item2) {
   return array
 }
 
-function WithTooltip() {
-  let popperInstance
-  return {
-    oncreate: function (vnode) {
-      const [child, tooltip] = vnode.dom.children
-      popperInstance = createPopper(child, tooltip, {
-        placement: "top",
-        modifiers: [
-          {
-            name: "offset",
-            options: {
-              offset: [0, 8],
-            },
+function WithTooltip(initialVnode) {
+  let beingHovered
+
+  function shouldShowTooltip(vnode) {
+    const { showTooltip, onlyOnHover } = vnode.attrs
+    if (!onlyOnHover) {
+      return showTooltip
+    } else {
+      return beingHovered && showTooltip
+    }
+  }
+
+  function myCreatePopper(reference, tooltip) {
+    createPopper(reference, tooltip, {
+      placement: "top",
+      modifiers: [
+        {
+          name: "offset",
+          options: {
+            offset: [0, 8],
           },
-        ],
-      })
+        },
+      ],
+    })
+  }
+
+  return {
+    onupdate: function (vnode) {
+      if (shouldShowTooltip(vnode)) {
+        const [child, tooltip] = vnode.dom.children
+        myCreatePopper(child, tooltip)
+      }
     },
-    onupdate: function () {
-      popperInstance.update()
-    },
-    view: function (vnode) {
+
+    view(vnode) {
+      const tooltipStyle =
+        ".tooltip.absolute.z-10.inline-block.px-3.py-2.text-sm.font-medium.text-white.bg-gray-900.rounded-lg.shadow-sm"
+      const {
+        classForWrapper,
+        message = "Default message",
+        onlyOnHover,
+        showTooltip = true,
+        child,
+      } = vnode.attrs
+
       return m(
         ".with-tooltip",
-        { class: vnode.attrs.classForWrapper },
-        vnode.attrs.child,
-        m(
-          ".tooltip.absolute.z-10.inline-block.px-3.py-2.text-sm.font-medium.text-white.bg-gray-900.rounded-lg.shadow-sm",
-          {
-            class: vnode.attrs.showTooltip ? "" : "hidden",
-            // id: "tooltip",
-            // hidden: !vnode.attrs.showTooltip,
-          },
-          [
-            vnode.attrs.message,
-            m("div", { class: "tooltip-arrow", "data-popper-arrow": "" }),
-          ]
-        )
+        { class: classForWrapper },
+        !onlyOnHover
+          ? child
+          : m(
+              "div.foo",
+              {
+                class: "toll",
+                onmouseenter: () => {
+                  beingHovered = true
+                },
+                onmouseleave: () => {
+                  beingHovered = false
+                },
+              },
+              child
+            ),
+        m(tooltipStyle, { class: shouldShowTooltip(vnode) ? "" : "hidden" }, [
+          message,
+          m("div", { class: "tooltip-arrow", "data-popper-arrow": "" }),
+        ])
       )
     },
   }
 }
 
 const Button = {
-  view: function (vnode) {
+  view(vnode) {
     let colorStyles = "border-black"
     if (vnode.attrs.style === "green")
       colorStyles = "border-green-600 bg-green-300"
     if (vnode.attrs.style === "blue")
       colorStyles = "border-blue-600 bg-blue-300"
     let sizeStyles = "py-2 "
-    let disabledStyles = ""
-    if (vnode.attrs.visuallyDisable) disabledStyles = "disabled:opacity-75 "
+    if (vnode.attrs.visuallyDisable)
+      colorStyles = "border-gray-400 text-gray-400 cursor-not-allowed "
     return m(
       "button",
       {
-        class:
-          "border border-2 px-6 rounded-xl disabled:cursor-not-allowed " +
-          disabledStyles +
-          sizeStyles +
-          colorStyles,
+        class: "border border-2 px-6 rounded-xl " + sizeStyles + colorStyles,
         onclick: vnode.attrs.onclick,
+        // onclick: (e) => {
+        //   // e.preventDefault()
+        //   if (!vnode.attrs.disabled) {
+        //     vnode.attrs.onclick(e)
+        //   }
+        // },
         disabled: vnode.attrs.disabled,
       },
       vnode.attrs.title
@@ -83,7 +115,7 @@ const Button = {
 }
 
 const Card = {
-  view: function (vnode) {
+  view(vnode) {
     let style = ""
     if (vnode.attrs.isCompleted) style = "bg-green-400 border-green-600"
     if (!vnode.attrs.isCompleted) style = "bg-blue-400 border-blue-600"
@@ -91,7 +123,7 @@ const Card = {
       "article",
       {
         class:
-          "card border border-2 rounded-xl m-4 p-4 flex gap-8 justify-between items-baseline " +
+          "border border-2 rounded-xl m-4 p-4 flex gap-8 justify-between items-baseline " +
           style,
       },
       [
@@ -133,7 +165,7 @@ function colorCards(cards, isAllDone) {
 }
 
 const Cards = {
-  view: function () {
+  view() {
     const myCards = cardsForCommand(db.command)
     let cards = myCards.slice(0, db.numberOfCardsShown)
     cards = colorCards(cards, db.numberOfCardsShown === myCards.length)
@@ -147,53 +179,81 @@ const Cards = {
   },
 }
 
-const Main = {
-  view: function () {
+const Header = {
+  view() {
+    return m(
+      "header",
+      { class: "bg-blue-500" },
+      m(
+        "h1",
+        { class: "text-white text-center py-6 text-2xl md:text-4xl" },
+        m("a", { href: "/" }, "Challenge setup tool")
+      )
+    )
+  },
+}
+
+const NpxCommandInput = {
+  view() {
     const cards = cardsForCommand(db.command)
     const status = processStatus(cards, isNpxCommandValid(db.command))
-    return [
-      m(
-        "header",
-        { class: "bg-blue-500" },
-        m(
-          "h1",
-          { class: "text-white text-center py-6 text-2xl md:text-4xl" },
-          m("a", { href: "/" }, "Challenge setup tool")
-        )
+    return m(WithTooltip, {
+      child: m("input", {
+        class: "border-2 rounded text-sm px-2 pb-1 pt-2 font-mono w-full",
+        type: "text",
+        id: "npx-command",
+        placeholder: "npx ghcd@latest ...",
+        oninput: updateCommand,
+        readonly: status !== "Start",
+      }),
+      classForWrapper: "flex-grow",
+      message: m(
+        "div",
+        m("p", "Oops, that npx command does not seem to be valid!"),
+        m("p", "If you believe this is a bug, please open an issue :)")
       ),
+      showTooltip: db.command.trim().length && !isNpxCommandValid(db.command),
+      onlyOnHover: true,
+    })
+  },
+}
+
+const MainStartButton = {
+  view() {
+    const cards = cardsForCommand(db.command)
+    const status = processStatus(cards, isNpxCommandValid(db.command))
+    return m(WithTooltip, {
+      child: m(Button, {
+        title: status,
+        onclick: startClicked,
+        visuallyDisable: true,
+        disabled: !isNpxCommandValid(db.command) || status !== "Start",
+      }),
+      message:
+        "First enter a valid npx command and then press the Start button!",
+      // showTooltip: "onhover",
+      showTooltip: !isNpxCommandValid(db.command),
+      onlyOnHover: true,
+    })
+  },
+}
+
+const InputControls = {
+  view() {
+    return m("section", { class: "my-4 flex items-baseline flex-wrap gap-3" }, [
+      m("label", { for: "npx-command", class: "text-xl" }, "Npx command"),
+      m(NpxCommandInput),
+      m(MainStartButton),
+    ])
+  },
+}
+
+const Main = {
+  view() {
+    return [
+      m(Header),
       m("main", { class: "container mx-auto my-8 px-3" }, [
-        m(
-          "section",
-          { class: "controls my-4 flex items-baseline flex-wrap gap-3" },
-          [
-            m("label", { for: "npx-command", class: "text-xl" }, "Npx command"),
-            m(WithTooltip, {
-              classForWrapper: "flex-grow",
-              message: m(
-                "div",
-                m("p", "Oops, that npx command does not seem to be valid!"),
-                m("p", "If you believe this is a bug, please open an issue :)")
-              ),
-              showTooltip:
-                db.command.trim().length && !isNpxCommandValid(db.command),
-              child: m("input", {
-                class:
-                  "border-2 rounded text-sm px-2 pb-1 pt-2 font-mono w-full",
-                type: "text",
-                id: "npx-command",
-                placeholder: "npx ghcd@latest ...",
-                oninput: updateCommand,
-                readonly: status !== "Start",
-              }),
-            }),
-            m(Button, {
-              title: status,
-              onclick: startClicked,
-              visuallyDisable: true,
-              disabled: !isNpxCommandValid(db.command) || status !== "Start",
-            }),
-          ]
-        ),
+        m(InputControls),
         m(Cards),
       ]),
     ]
