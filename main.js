@@ -55,7 +55,6 @@ const WithTooltip = () => {
         classForWrapper,
         message = "Default message",
         onlyOnHover,
-        showTooltip = true,
         child,
       } = vnode.attrs
 
