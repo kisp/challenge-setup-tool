@@ -91,17 +91,16 @@ var Card = {
       "article",
       {
         class:
-          "card border border-2 rounded-xl m-4 p-4 flex justify-between items-baseline " +
+          "card border border-2 rounded-xl m-4 p-4 flex gap-8 justify-between items-baseline " +
           style,
       },
       [
         m(
           "p",
-          m(
-            "code",
-            { class: "border border-gray-500 bg-white px-5 pb-2 pt-3" },
-            vnode.attrs.command
-          )
+          {
+            class: "border border-gray-500 bg-white px-5 pb-2 pt-3",
+          },
+          m("code", vnode.attrs.command)
         ),
         m(WithTooltip, {
           message: "Copied to clipboard!",
@@ -151,7 +150,7 @@ var Cards = {
 var Main = {
   view: function () {
     const cards = cardsForCommand(db.command);
-    const status = processStatus(cards);
+    const status = processStatus(cards, isNpxCommandValid(db.command));
     return [
       m(
         "header",
