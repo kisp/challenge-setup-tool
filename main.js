@@ -178,7 +178,6 @@ const Header = {
       m(
         "h1",
         {
-          xclass: "text-white text-center py-6 text-xl",
           class: "text-xl text-black ml-4",
         },
         m("a", { href: "/" }, "Challenge setup tool")
