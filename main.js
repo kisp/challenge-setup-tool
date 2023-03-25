@@ -18,7 +18,7 @@ function WithTooltip() {
   let popperInstance;
   return {
     oncreate: function (vnode) {
-      const [child,tooltip] = vnode.dom.children;
+      const [child, tooltip] = vnode.dom.children;
       popperInstance = createPopper(child, tooltip, {
         placement: "top",
         modifiers: [
