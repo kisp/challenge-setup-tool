@@ -8,7 +8,7 @@ import {
 
 describe("isNpxCommandValid", () => {
   it("returns false on foo", () => {
-    expect(isNpxCommandValid("foo")).toBeFalsyXXX();
+    expect(isNpxCommandValid("foo")).toBeFalsy();
   });
 
   it("returns false on an incomplete command", () => {
