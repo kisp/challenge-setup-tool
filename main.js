@@ -8,16 +8,16 @@ import { ClipboardDocument } from "./icons"
 import { isNpxCommandValid, cardsForCommand } from "./logic"
 import { db, processStatus } from "./state"
 
-function repeatItem1AndThenSingleItem2(count, item1, item2) {
+const repeatItem1AndThenSingleItem2 = (count, item1, item2) => {
   const array = Array(count).fill(item1)
   array.push(item2)
   return array
 }
 
-function WithTooltip(initialVnode) {
+const WithTooltip = () => {
   let beingHovered
 
-  function shouldShowTooltip(vnode) {
+  const shouldShowTooltip = (vnode) => {
     const { showTooltip, onlyOnHover } = vnode.attrs
     if (!onlyOnHover) {
       return showTooltip
@@ -26,7 +26,7 @@ function WithTooltip(initialVnode) {
     }
   }
 
-  function myCreatePopper(reference, tooltip) {
+  const myCreatePopper = (reference, tooltip) => {
     createPopper(reference, tooltip, {
       placement: "top",
       modifiers: [
@@ -41,7 +41,7 @@ function WithTooltip(initialVnode) {
   }
 
   return {
-    onupdate: function (vnode) {
+    onupdate(vnode) {
       if (shouldShowTooltip(vnode)) {
         const [child, tooltip] = vnode.dom.children
         myCreatePopper(child, tooltip)
@@ -88,25 +88,17 @@ function WithTooltip(initialVnode) {
 
 const Button = {
   view(vnode) {
-    let colorStyles = "border-black"
+    let classes = "border-black"
     if (vnode.attrs.style === "green")
-      colorStyles = "border-green-600 bg-green-300"
-    if (vnode.attrs.style === "blue")
-      colorStyles = "border-blue-600 bg-blue-300"
-    let sizeStyles = "py-2 "
-    if (vnode.attrs.visuallyDisable)
-      colorStyles = "border-gray-400 text-gray-400 cursor-not-allowed "
+      classes = "border-green-600 bg-green-300 "
+    if (vnode.attrs.style === "blue") classes = "border-blue-600 bg-blue-300 "
+    if (vnode.attrs.visuallyDisabled) classes = "border-gray-400 text-gray-400 "
+    if (vnode.attrs.disabled) classes += "cursor-not-allowed "
     return m(
       "button",
       {
-        class: "border border-2 px-6 rounded-xl " + sizeStyles + colorStyles,
+        class: "border border-2 px-6 py-2 rounded-xl " + classes,
         onclick: vnode.attrs.onclick,
-        // onclick: (e) => {
-        //   // e.preventDefault()
-        //   if (!vnode.attrs.disabled) {
-        //     vnode.attrs.onclick(e)
-        //   }
-        // },
         disabled: vnode.attrs.disabled,
       },
       vnode.attrs.title
@@ -151,7 +143,7 @@ const Card = {
   },
 }
 
-function colorCards(cards, isAllDone) {
+const colorCards = (cards, isAllDone) => {
   if (cards.length === 0) return cards
 
   if (isAllDone)
@@ -183,55 +175,128 @@ const Header = {
   view() {
     return m(
       "header",
-      { class: "bg-blue-500" },
+      { class: "bg-neutral-100 py-4 shadow-lg" },
       m(
         "h1",
-        { class: "text-white text-center py-6 text-2xl md:text-4xl" },
+        {
+          xclass: "text-white text-center py-6 text-xl",
+          class: "text-xl text-black ml-4",
+        },
         m("a", { href: "/" }, "Challenge setup tool")
       )
     )
   },
 }
 
-const NpxCommandInput = {
-  view() {
-    const cards = cardsForCommand(db.command)
-    const status = processStatus(cards, isNpxCommandValid(db.command))
-    return m(WithTooltip, {
-      child: m("input", {
-        class: "border-2 rounded text-sm px-2 pb-1 pt-2 font-mono w-full",
+const TextInput = () => {
+  let isTyping
+  let timer
+  return {
+    oncreate({ attrs: { onUserTypingOrNotTyping } }) {
+      onUserTypingOrNotTyping(false)
+    },
+    view({
+      attrs: {
+        id,
+        placeholder,
+        oninput,
+        readonly,
+        onUserTypingOrNotTyping,
+        reportNotTypingDelay = 800,
+        markInvalid,
+      },
+    }) {
+      let classes =
+        "bg-gray-200 appearance-none border-2 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white "
+      if (markInvalid) {
+        classes += "border-red-300 focus:border-red-400 "
+      } else {
+        classes += "border-gray-200 focus:border-blue-500 "
+      }
+      return m("input", {
+        class: classes,
         type: "text",
-        id: "npx-command",
-        placeholder: "npx ghcd@latest ...",
-        oninput: updateCommand,
-        readonly: status !== "Start",
-      }),
-      classForWrapper: "flex-grow",
-      message: m(
-        "div",
-        m("p", "Oops, that npx command does not seem to be valid!"),
-        m("p", "If you believe this is a bug, please open an issue :)")
-      ),
-      showTooltip: db.command.trim().length && !isNpxCommandValid(db.command),
-      onlyOnHover: true,
-    })
-  },
+        id: id,
+        placeholder: placeholder,
+        oninput: oninput,
+        onkeydown: () => {
+          if (!isTyping) {
+            onUserTypingOrNotTyping(true)
+            isTyping = true
+          }
+          if (timer) {
+            clearTimeout(timer)
+            timer = null
+          }
+          timer = setTimeout(() => {
+            isTyping = false
+            onUserTypingOrNotTyping(false)
+            timer = null
+            m.redraw()
+          }, reportNotTypingDelay)
+        },
+        readonly: readonly,
+      })
+    },
+  }
+}
+
+const NpxCommandInput = () => {
+  let userIsTyping
+  let markInvalid
+  let editingHasBegun
+  const isCommandEmpty = () => db.command.trim().length === 0
+  const isCommandInputInvalid = () =>
+    (!isCommandEmpty() || editingHasBegun) && !isNpxCommandValid(db.command)
+  return {
+    view() {
+      const cards = cardsForCommand(db.command)
+      const status = processStatus(cards, isNpxCommandValid(db.command))
+      return m(WithTooltip, {
+        child: m(TextInput, {
+          id: "npx-command",
+          placeholder: "npx ghcd@latest ...",
+          oninput: (e) => {
+            if (!isCommandEmpty()) editingHasBegun = true
+            updateCommand(e)
+          },
+          readonly: status !== "Start",
+          reportNotTypingDelay: 800,
+          onUserTypingOrNotTyping: (isTyping) => {
+            userIsTyping = isTyping
+            if (!isTyping) {
+              markInvalid = isCommandInputInvalid()
+            }
+          },
+          markInvalid: markInvalid,
+        }),
+        classForWrapper: "flex-grow",
+        message: m(
+          "div",
+          m("p", "Oops, that npx command does not seem to be valid!"),
+          m("p", "If you believe this is a bug, please open an issue :)")
+        ),
+        showTooltip: isCommandInputInvalid() && !userIsTyping,
+        onlyOnHover: true,
+      })
+    },
+  }
 }
 
 const MainStartButton = {
   view() {
     const cards = cardsForCommand(db.command)
     const status = processStatus(cards, isNpxCommandValid(db.command))
+    const disabled = !isNpxCommandValid(db.command) || status !== "Start"
     return m(WithTooltip, {
       child: m(Button, {
         title: status,
         onclick: startClicked,
-        visuallyDisable: true,
-        disabled: !isNpxCommandValid(db.command) || status !== "Start",
+        visuallyDisabled: disabled,
+        disabled: disabled,
       }),
       message:
-        "First enter a valid npx command and then press the Start button!",
-      // showTooltip: "onhover",
+        "First, enter a valid npx command, and then press the Start button!",
       showTooltip: !isNpxCommandValid(db.command),
       onlyOnHover: true,
     })
@@ -260,21 +325,18 @@ const Main = {
   },
 }
 
-function updateCommand(e) {
+const updateCommand = (e) => {
   db.command = e.target.value
 }
 
-function startClicked() {
+const startClicked = () => {
   db.numberOfCardsShown = 1
 }
 
-function copyToClipboard() {
+const copyToClipboard = () => {
   const c = cardsForCommand(db.command)[db.numberOfCardsShown - 1].command
   navigator.clipboard.writeText(c)
   db.copiedToClipboard = true
-  setTimeout(() => {
-    m.redraw()
-  }, 10)
   setTimeout(() => {
     db.copiedToClipboard = false
     m.redraw()
