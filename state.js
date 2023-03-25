@@ -4,7 +4,8 @@ export const db = {
   copiedToClipboard: false,
 };
 
-export function processStatus(cards) {
+export function processStatus(cards, isNpxCommandValid) {
+  if (!isNpxCommandValid) return "Start";
   return db.numberOfCardsShown === cards.length
     ? "Done"
     : db.numberOfCardsShown

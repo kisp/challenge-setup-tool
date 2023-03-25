@@ -27,16 +27,6 @@ const basePath = (command) => {
   return butlast(sessionPath(command).split("/")).join("/");
 };
 
-export function cardsForCommand(command) {
-  return [
-    { command: " echo command 1" },
-    { command: " echo command 2" },
-    { command: " echo command 3" },
-    { command: " echo command 4" },
-    { command: " echo command 5" },
-  ];
-}
-
 const formatWithLeadingZero = (integer) => {
   return integer.toString().padStart(2, "0");
 };
@@ -72,4 +62,12 @@ export function generateShellCommands(command, date) {
     `git switch -c ${branchName(command, date)}`,
     `git push -u origin ${branchName(command, date)}`,
   ];
+}
+
+export function cardsForCommand(command, date) {
+  if (!date) date = new Date();
+  if (!isNpxCommandValid(command)) return [];
+  return generateShellCommands(command, date).map((shellCommand) => {
+    return { command: shellCommand };
+  });
 }
