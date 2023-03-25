@@ -14,8 +14,6 @@ function repeatItem1AndThenSingleItem2(count, item1, item2) {
   return array;
 }
 
-function foo(a) {}
-
 function WithTooltip() {
   let popperInstance;
   return {
