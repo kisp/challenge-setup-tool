@@ -345,7 +345,7 @@ const copyToClipboard = () => {
   setTimeout(() => {
     db.numberOfCardsShown++
     m.redraw()
-  }, 4000)
+  }, 3000)
 }
 
 m.mount(document.getElementById("app"), Main)
