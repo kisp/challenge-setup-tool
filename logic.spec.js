@@ -86,6 +86,7 @@ describe("generateShellCommands", () => {
       "git push",
       "git switch -c challenges/2023-03-25/my/session",
       "git push -u origin challenges/2023-03-25/my/session",
+      "code my/session",
     ])
   })
 
@@ -103,6 +104,7 @@ describe("generateShellCommands", () => {
       "git push",
       "git switch -c challenges/2023-03-25/path/to/session",
       "git push -u origin challenges/2023-03-25/path/to/session",
+      "code path/to/session",
     ])
   })
 })
