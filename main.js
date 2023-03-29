@@ -106,6 +106,9 @@ const Button = {
 }
 
 const Card = {
+  oncreate({ dom }) {
+    dom.scrollIntoView()
+  },
   view(vnode) {
     let style = ""
     if (vnode.attrs.isCompleted) style = "bg-green-400 border-green-600"
