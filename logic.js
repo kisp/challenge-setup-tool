@@ -61,6 +61,7 @@ export function generateShellCommands(command, date) {
     "git push",
     `git switch -c ${branchName(command, date)}`,
     `git push -u origin ${branchName(command, date)}`,
+    `code ${sessionPath(command)}`,
   ]
 }
 
