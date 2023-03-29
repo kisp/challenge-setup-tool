@@ -314,12 +314,28 @@ const InputControls = {
   },
 }
 
+const StartupMessage = {
+  view() {
+    if (db.numberOfCardsShown === 0) {
+      return m("div")
+    }
+    return m(
+      "p",
+      { class: "border border-gray-400 rounded-xl m-4 p-6" },
+      "Before running commands, please open your terminal and cd to the ",
+      m("strong", "top-level directory"),
+      " of your challenges repo! 🙂"
+    )
+  },
+}
+
 const Main = {
   view() {
     return [
       m(Header),
       m("main", { class: "container mx-auto my-8 px-3" }, [
         m(InputControls),
+        m(StartupMessage),
         m(Cards),
       ]),
     ]
